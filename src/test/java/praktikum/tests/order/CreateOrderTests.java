@@ -1,5 +1,6 @@
 package praktikum.tests.order;
 
+import com.github.javafaker.Faker;
 import io.qameta.allure.*;
 import io.qameta.allure.junit4.DisplayName;
 import io.qameta.allure.junit4.Tag;
@@ -15,11 +16,9 @@ import praktikum.objects.requestobjects.Order;
 import praktikum.objects.responseobjects.IngredientsResponse;
 import static org.apache.http.HttpStatus.*;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 @Link(url = "https://code.s3.yandex.net/qa-automation-engineer/java/cheatsheets/paid-track/diplom/api-documentation.pdf")
 @Tag("create new order")
@@ -35,24 +34,14 @@ public class CreateOrderTests {
     private final OrderAPIOperators orderAPI = new OrderAPIOperators();
     private final UserAPIOperators userAPI = new UserAPIOperators();
     private final CheckResponse checkResponse = new CheckResponse();
-    private static final String ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private static final SecureRandom RANDOM = new SecureRandom();
-
-    private String generateRandomString(int length) {
-        StringBuilder result = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            int index = RANDOM.nextInt(ALPHABET.length());
-            result.append(ALPHABET.charAt(index));
-        }
-        return result.toString();
-    }
+    private final Faker faker = new Faker();
 
     @Before
     @Step("Подготовка тестовых данных")
     public void prepareTestData() {
-        this.email = "m_" + generateRandomString(5) + "@ya.ru";
-        this.password = "p_" + generateRandomString(5);
-        this.name = "n_" + generateRandomString(6);
+        this.email = faker.internet().safeEmailAddress();
+        this.password = faker.letterify("?????????");
+        this.name = faker.name().firstName();
 
         Response response = userAPI.registerUser(email, password, name);
         checkResponse.checkStatusCode(response, SC_OK);
@@ -79,10 +68,10 @@ public class CreateOrderTests {
     @Description("Тест API на создание заказа с авторизацией, используя случайные ингредиенты из списка. " +
             "Ожидаемый результат - заказ успешно создан.")
     public void createOrderWithAuthAndRandomIngredients() {
-        int numberOfIngredients = RANDOM.nextInt(4) + 2; // от 2 до 5 ингредиентов
+        int numberOfIngredients = faker.number().numberBetween(2, 6);
         List<String> selectedIngredients = new ArrayList<>();
         for (int i = 0; i < numberOfIngredients; i++) {
-            Ingredients randomIngredient = ingredients.get(RANDOM.nextInt(ingredients.size()));
+            Ingredients randomIngredient = ingredients.get(faker.number().numberBetween(0, ingredients.size()));
             selectedIngredients.add(randomIngredient.get_id());
         }
         Response response = orderAPI.createOrder(selectedIngredients, token);
@@ -96,17 +85,17 @@ public class CreateOrderTests {
     @Description("Тест API на создание заказа с авторизацией, используя случайные ингредиенты из списка. " +
             "Ожидаемый результат - заказ успешно создан.")
     public void createOrderWithoutAuthAndRandomIngredients() {
-        int numberOfIngredients = RANDOM.nextInt(4) + 2; // от 2 до 5 ингредиентов
+        int numberOfIngredients = faker.number().numberBetween(2, 6);
         List<String> selectedIngredients = new ArrayList<>();
         for (int i = 0; i < numberOfIngredients; i++) {
-            Ingredients randomIngredient = ingredients.get(RANDOM.nextInt(ingredients.size()));
+            Ingredients randomIngredient = ingredients.get(faker.number().numberBetween(0, ingredients.size()));
             selectedIngredients.add(randomIngredient.get_id());
         }
         Response response = orderAPI.createOrder(new Order(selectedIngredients));
 
         checkResponse.checkStatusCode(response, SC_OK);
         checkResponse.checkSuccessStatus(response, "true");
-        //в документации нет информации об ожидаемом коде и статусе, но тест если ожидать 200 ОК
+        //в документации нет информации об ожидаемом коде и статусе, но тест не падает если ожидать 200 ОК
     }
 
     @Test
@@ -140,7 +129,9 @@ public class CreateOrderTests {
     @Description("Тест API на создание заказа с авторизацией, с неверным хешем ингредиентов. " +
             "Ожидаемый результат - заказ не создан, получено сообщение об ошибке.")
     public void createOrderWithoutAuthAndWithWrongHash() {
-        List<String> testIngredients = Arrays.asList(UUID.randomUUID().toString(), UUID.randomUUID().toString());
+        List<String> testIngredients = Arrays.asList(
+                faker.internet().uuid(),
+                faker.internet().uuid());
         Response response = orderAPI.createOrder(testIngredients, token);
 
         checkResponse.checkStatusCode(response, SC_INTERNAL_SERVER_ERROR);
@@ -151,7 +142,9 @@ public class CreateOrderTests {
     @Description("Тест API на создание заказа без авторизации, с неверным хешем ингредиентов. " +
             "Ожидаемый результат - заказ не создан, получено сообщение об ошибке.")
     public void createOrderWithAuthAndWithWrongHash() {
-        List<String> testIngredients = Arrays.asList(UUID.randomUUID().toString(), UUID.randomUUID().toString());
+        List<String> testIngredients = Arrays.asList(
+                faker.internet().uuid(),
+                faker.internet().uuid());
         Response response = orderAPI.createOrder(testIngredients);
 
         checkResponse.checkStatusCode(response, SC_INTERNAL_SERVER_ERROR);

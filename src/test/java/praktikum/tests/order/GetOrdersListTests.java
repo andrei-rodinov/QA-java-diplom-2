@@ -1,6 +1,7 @@
 package praktikum.tests.order;
 
 
+import com.github.javafaker.Faker;
 import io.qameta.allure.*;
 import io.qameta.allure.junit4.DisplayName;
 import io.qameta.allure.junit4.Tag;
@@ -14,7 +15,6 @@ import praktikum.endpoints.operators.UserAPIOperators;
 import praktikum.objects.requestobjects.Ingredients;
 import praktikum.objects.responseobjects.IngredientsResponse;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,24 +34,15 @@ public class GetOrdersListTests {
     private final OrderAPIOperators orderAPI = new OrderAPIOperators();
     private final UserAPIOperators userAPI = new UserAPIOperators();
     private final CheckResponse checkResponse = new CheckResponse();
-    private static final String ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private static final SecureRandom RANDOM = new SecureRandom();
+    private final Faker faker = new Faker();
 
-    private String generateRandomString(int length) {
-        StringBuilder result = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            int index = RANDOM.nextInt(ALPHABET.length());
-            result.append(ALPHABET.charAt(index));
-        }
-        return result.toString();
-    }
 
     @Before
     @Step("Подготовка тестовых данных")
     public void prepareTestData() {
-        this.email = "m_" + generateRandomString(5) + "@ya.ru";
-        this.password = "p_" + generateRandomString(5);
-        this.name = "n_" + generateRandomString(6);
+        this.email = faker.internet().safeEmailAddress();
+        this.password = faker.letterify("?????????");
+        this.name = faker.name().firstName();
 
         Response response = userAPI.registerUser(email, password, name);
         checkResponse.checkStatusCode(response, SC_OK);
@@ -64,10 +55,10 @@ public class GetOrdersListTests {
         checkResponse.checkStatusCode(response, SC_OK);
         List<Ingredients> ingredients = response.body().as(IngredientsResponse.class).getData();
 
-        int numberOfIngredients = RANDOM.nextInt(4) + 2; // от 2 до 5 ингредиентов
+        int numberOfIngredients = faker.number().numberBetween(2, 6);
         List<String> selectedIngredients = new ArrayList<>();
         for (int i = 0; i < numberOfIngredients; i++) {
-            Ingredients randomIngredient = ingredients.get(RANDOM.nextInt(ingredients.size()));
+            Ingredients randomIngredient = ingredients.get(faker.number().numberBetween(0, ingredients.size()));
             selectedIngredients.add(randomIngredient.get_id());
         }
 

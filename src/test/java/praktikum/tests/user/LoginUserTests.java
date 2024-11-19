@@ -1,6 +1,7 @@
 package praktikum.tests.user;
 
 
+import com.github.javafaker.Faker;
 import io.qameta.allure.*;
 import io.qameta.allure.junit4.DisplayName;
 import io.qameta.allure.junit4.Tag;
@@ -12,7 +13,6 @@ import praktikum.endpoints.operators.CheckResponse;
 import praktikum.endpoints.operators.UserAPIOperators;
 import static org.apache.http.HttpStatus.*;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 
 @Link(url = "https://code.s3.yandex.net/qa-automation-engineer/java/cheatsheets/paid-track/diplom/api-documentation.pdf")
@@ -28,24 +28,14 @@ public class LoginUserTests {
     private ArrayList<String> tokens = new ArrayList<>();
     private final UserAPIOperators userAPI = new UserAPIOperators();
     private final CheckResponse checkResponse = new CheckResponse();
-    private static final String ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private static final SecureRandom RANDOM = new SecureRandom();
-
-    private String generateRandomString(int length) {
-        StringBuilder result = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            int index = RANDOM.nextInt(ALPHABET.length());
-            result.append(ALPHABET.charAt(index));
-        }
-        return result.toString();
-    }
+    private final Faker faker = new Faker();
 
     @Before
     @Step("Подготовка тестовых данных")
     public void prepareTestData() {
-        this.email = "m_" + generateRandomString(5) + "@ya.ru";
-        this.password = "p_" + generateRandomString(5);
-        this.name = "n_" + generateRandomString(6);
+        this.email = faker.internet().safeEmailAddress();
+        this.password = faker.letterify("?????????");
+        this.name = faker.name().firstName();
 
         Response response = userAPI.registerUser(email, password, name);
         if (response.getStatusCode() == SC_OK) {
