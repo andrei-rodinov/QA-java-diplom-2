@@ -58,9 +58,9 @@ public class CreateOrderTests {
     @After
     @Step("Удаление данных после теста")
     public void clearAfterTests() {
-        if (token == null)
-            return;
-        checkResponse.checkStatusCode(userAPI.deleteUser(token), SC_ACCEPTED);
+        if (token != null) {
+            checkResponse.checkStatusCode(userAPI.deleteUser(token), SC_ACCEPTED);
+        }
     }
 
     @Test
